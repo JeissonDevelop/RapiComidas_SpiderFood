@@ -1,42 +1,305 @@
-#root {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
+.App {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  max-width: 1200px;
+  width: 100%;
+  padding: 40px 20px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+}
+
+.toggleButton {
+  background-color: white;
+  color: #000000;
+  border: 1px solid #ff7b7b;
+  padding: 8px 20px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+  margin-bottom: 30px;
+  transition: background-color 0.2s;
+}
+
+.toggleButton:hover {
+  background-color: #ffe5e5;
+}
+
+.title {
   text-align: center;
+  font-size: 36px;
+  font-weight: 700;
+  color: #a6a6a6;
+  margin: 20px 0 30px 0;
 }
 
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
-}
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
-}
-.logo.react:hover {
-  filter: drop-shadow(0 0 2em #61dafbaa);
+.subTitle {
+  text-align: center;
+  font-size: 26px;
+  font-weight: 600;
+  color: #bfbfbf;
+  margin: 0 0 30px 0;
 }
 
-@keyframes logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+.ulApp {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  width: 100%;
+  max-width: 600px;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  a:nth-of-type(2) .logo {
-    animation: logo-spin infinite 20s linear;
-  }
+.liApp {
+  background-color: white;
+  border: 1px solid #e5e5e5;
+  border-radius: 6px;
+  padding: 24px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  transition: transform 0.2s, box-shadow 0.2s;
 }
 
-.card {
-  padding: 2em;
+.liApp:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.12);
 }
 
-.read-the-docs {
-  color: #888;
+.liApp p:first-child {
+  font-weight: 600;
+  color: #27ae60;
+  font-size: 17px;
+  margin: 0 0 6px 0;
+}
+
+.liApp p:last-child {
+  color: #95a5a6;
+  font-size: 15px;
+  margin: 0;
+}
+
+.foodTitle {
+  text-align: center;
+  font-size: 32px;
+  font-weight: 700;
+  color: #929292;
+  margin: 20px 0 10px 0;
+}
+
+.foodTitle + p {
+  text-align: center;
+  color: #666;
+  font-size: 13px;
+  margin-bottom: 30px;
+  font-weight: 400;
+}
+
+.ulFoods {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  width: 100%;
+  max-width: 600px;
+}
+
+.liFoods {
+  background-color: white;
+  border: 1px solid #e5e5e5;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+  transition: transform 0.2s, box-shadow 0.2s;
+  cursor: pointer;
+}
+
+.liFoods:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+}
+
+.foodImg {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+  display: block;
+}
+
+.foodItem {
+  padding: 16px;
+}
+
+.foodDesc {
+  color: #666;
+  font-size: 13px;
+  line-height: 1.4;
+  margin: 0 0 12px 0;
+  min-height: 35px;
+}
+
+.foodPrice {
+  color: #27ae60;
+  font-size: 18px;
+  font-weight: 700;
+  margin: 0;
+  text-align: right;
+}
+
+/* FoodOrder Styles */
+.foodOrderContainer {
+  width: 100%;
+  max-width: 350px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.foodOrderTitle {
+  text-align: center;
+  font-size: 26px;
+  font-weight: 700;
+  color: #7af05d;
+  margin: 0 0 20px 0;
+}
+
+.foodOrderCard {
+  background-color: white;
+  border: 1px solid #e5e5e5;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  width: 100%;
+}
+
+.foodOrderImg {
+  width: 100%;
+  height: 180px;
+  object-fit: cover;
+  display: block;
+}
+
+.foodOrderDesc {
+  padding: 16px 20px 0;
+  color: #666;
+  font-size: 13px;
+  line-height: 1.5;
+  text-align: center;
+  margin: 0;
+}
+
+.foodOrderPrice {
+  padding: 12px 20px;
+  color: #27ae60;
+  font-size: 20px;
+  font-weight: 700;
+  text-align: center;
+  margin: 0;
+}
+
+.foodOrderForm {
+  padding: 20px;
+  padding-top: 10px;
+}
+
+.formGroup {
+  margin-bottom: 16px;
+}
+
+.formGroup label {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 6px;
+}
+
+.formGroup input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+  box-sizing: border-box;
+  font-family: inherit;
+}
+
+.formGroup input:focus {
+  outline: none;
+  border-color: #27ae60;
+}
+
+.formGroup input[type="number"] {
+  text-align: right;
+}
+
+.buttonGroup {
+  display: flex;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.btnSubmit, .btnBack {
+  flex: 1;
+  padding: 12px 20px;
+  border: none;
+  border-radius: 5px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.btnSubmit {
+  background-color: #27ae60;
+  color: white;
+}
+
+.btnSubmit:hover {
+  opacity: 0.9;
+}
+
+.btnBack {
+  background-color: #3498db;
+  color: white;
+}
+
+.btnBack:hover {
+  opacity: 0.9;
+}
+
+.successMessage {
+  margin-top: 16px;
+  padding: 12px;
+  background-color: #d4edda;
+  color: #155724;
+  border: 1px solid #c3e6cb;
+  border-radius: 4px;
+  font-size: 12px;
+  text-align: center;
+  line-height: 1.4;
+  margin-bottom: 0;
+}
+/* Out of Stock Styles */
+.liFoods.outOfStock {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.liFoods.outOfStock:hover {
+  transform: none;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+/* Button disabled state */
+.btnSubmit:disabled {
+  background-color: #95a5a6;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.btnSubmit:disabled:hover {
+  opacity: 0.6;
 }
