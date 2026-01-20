@@ -1,31 +1,27 @@
 import { useState } from "react";
-import type { MenuItem } from "../../entities/entities";
+import { useStore } from "../../store/StoreContext";
 
-interface CartItem extends MenuItem {
-  cartQuantity: number;
-}
-
-interface CartProps {
-  cartItems: CartItem[];
-  onRemoveItem: (foodId: number) => void;
-  onSubmitOrder: (name: string, phone: string) => void;
-  onCancelOrder: () => void;
-  onBackToFoods: () => void;
-}
-
-function Cart(props: CartProps) {
+function Cart() {
+  // Obtenemos carrito y acciones globales vía contexto
+  const { cartItems, removeFromCart, submitCart, cancelCart } = useStore();
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [orderSent, setOrderSent] = useState(false);
+  const [validationError, setValidationError] = useState("");
 
-  const totalPrice = props.cartItems.reduce(
+  const totalPrice = cartItems.reduce(
     (sum, item) => sum + item.price * item.cartQuantity,
-    0
+    0,
   );
 
   const handleSubmit = () => {
+    if (!name.trim() || !phone.trim()) {
+      setValidationError("Completa nombre y teléfono para enviar el pedido.");
+      return;
+    }
+    setValidationError("");
     setOrderSent(true);
-    props.onSubmitOrder(name, phone);
+    submitCart(name, phone);
     setTimeout(() => {
       setOrderSent(false);
       setName("");
@@ -33,7 +29,7 @@ function Cart(props: CartProps) {
     }, 2000);
   };
 
-  if (props.cartItems.length === 0 && !orderSent) {
+  if (cartItems.length === 0 && !orderSent) {
     return (
       <div className="cartContainer">
         <h4 className="cartTitle">Carrito</h4>
@@ -48,7 +44,7 @@ function Cart(props: CartProps) {
       {!orderSent ? (
         <>
           <ul className="cartList">
-            {props.cartItems.map((item) => (
+            {cartItems.map((item) => (
               <li key={item.id} className="cartItem">
                 <div className="cartItemInfo">
                   <p className="cartItemName">{item.name}</p>
@@ -60,7 +56,7 @@ function Cart(props: CartProps) {
                 </div>
                 <button
                   className="btnRemove"
-                  onClick={() => props.onRemoveItem(item.id)}
+                  onClick={() => removeFromCart(item.id)}
                 >
                   Quitar
                 </button>
@@ -91,11 +87,13 @@ function Cart(props: CartProps) {
               />
             </div>
 
+            {validationError && <p className="formError">{validationError}</p>}
+
             <div className="buttonGroup">
               <button className="btnSubmit" onClick={handleSubmit}>
                 Enviar pedido
               </button>
-              <button className="btnCancel" onClick={props.onCancelOrder}>
+              <button className="btnCancel" onClick={cancelCart}>
                 Cancelar pedido
               </button>
             </div>

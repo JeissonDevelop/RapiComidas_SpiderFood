@@ -1,5 +1,6 @@
 import { useState } from "react";
 import type { MenuItem } from "../../entities/entities";
+import { useStore } from "../../store/StoreContext";
 
 interface FoodOrderProps {
   foodItem: MenuItem;
@@ -11,9 +12,12 @@ interface FoodOrderProps {
 
 function FoodOrder(props: FoodOrderProps) {
   const [quantity, setQuantity] = useState(1);
+  const { setSelectedFood } = useStore();
 
   const handleAddToCart = () => {
+    // Añadimos al carrito usando la función del contexto
     props.onAddToCart(props.foodItem.id, quantity);
+    setSelectedFood(null);
   };
 
   return (
@@ -41,8 +45,8 @@ function FoodOrder(props: FoodOrderProps) {
                 setQuantity(
                   Math.min(
                     props.availableStock,
-                    Math.max(1, Number(e.target.value))
-                  )
+                    Math.max(1, Number(e.target.value)),
+                  ),
                 )
               }
               min="1"

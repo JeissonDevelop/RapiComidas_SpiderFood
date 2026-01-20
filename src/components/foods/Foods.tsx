@@ -1,10 +1,8 @@
-import type { MenuItem } from "../../entities/entities";
+import { useStore } from "../../store/StoreContext";
 
-interface FoodsProps {
-  foodItems: MenuItem[];
-  onSelectFood: (food: MenuItem) => void;
-}
-function Foods(props: FoodsProps) {
+function Foods() {
+  // Consumimos menú y selección desde contexto global
+  const { menuItems, setSelectedFood } = useStore();
   return (
     <>
       <h4 className="foodTitle">Carta</h4>
@@ -19,12 +17,12 @@ function Foods(props: FoodsProps) {
         Pulsa sobre cada producto para añadirlo
       </p>
       <ul className="ulFoods">
-        {props.foodItems.map((item) => {
+        {menuItems.map((item) => {
           return (
             <li
               key={item.id}
               className={`liFoods ${item.quantity === 0 ? "outOfStock" : ""}`}
-              onClick={() => item.quantity > 0 && props.onSelectFood(item)}
+              onClick={() => item.quantity > 0 && setSelectedFood(item)}
               style={
                 item.quantity === 0
                   ? { opacity: 0.5, cursor: "not-allowed" }
