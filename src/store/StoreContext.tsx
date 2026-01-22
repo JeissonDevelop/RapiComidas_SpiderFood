@@ -42,7 +42,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       quantity: 40,
       desc: "Hamburguesa de pollo frito - lechuga, tomate, queso y mayonesa",
       price: 24,
-      image: "cb.jpg",
+      image: `${import.meta.env.BASE_URL}images/cb.jpg`,
     },
     {
       id: 2,
@@ -50,7 +50,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       quantity: 30,
       desc: "Hamburguesa verde - lechuga, tomate, queso vegano y mayonesa",
       price: 22,
-      image: "vb.jpg",
+      image: `${import.meta.env.BASE_URL}images/vb.jpg`,
     },
     {
       id: 3,
@@ -58,7 +58,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       quantity: 50,
       desc: "Patatas fritas crujientes - sal y especias",
       price: 10,
-      image: "chips.jpg",
+      image: `${import.meta.env.BASE_URL}images/chips.jpg`,
     },
     {
       id: 4,
@@ -66,7 +66,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       quantity: 30,
       desc: "Helado - cremoso y dulce",
       price: 8,
-      image: "ic.jpg",
+      image: `${import.meta.env.BASE_URL}images/ic.jpg`,
     },
   ]);
 

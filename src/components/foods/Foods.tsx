@@ -29,11 +29,7 @@ function Foods() {
                   : {}
               }
             >
-              <img
-                className="foodImg"
-                src={`/images/${item.image}`}
-                alt={item.name}
-              />
+              <img className="foodImg" src={item.image} alt={item.name} />
               <div className="foodItem">
                 <p className="foodDesc">{item.desc}</p>
                 <p className="foodPrice">

@@ -26,7 +26,7 @@ function FoodOrder(props: FoodOrderProps) {
       <div className="foodOrderCard">
         <img
           className="foodOrderImg"
-          src={`/images/${props.foodItem.image}`}
+          src={props.foodItem.image}
           alt={props.foodItem.name}
         />
         <p className="foodOrderDesc">{props.foodItem.desc}</p>
