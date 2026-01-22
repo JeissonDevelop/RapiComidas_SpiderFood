@@ -29,7 +29,7 @@ function AppContent() {
         >
           {isChooseFoodPage ? "Comprobación de disponibilidad" : "Pedir Comida"}
         </button>
-        <h3 className="title">Comida Rápida Online</h3>
+        <h3 className="title">SpiderFood Comida Rápida</h3>
         {!isChooseFoodPage && !selectedFood && (
           <>
             <h4 className="subTitle">Menús</h4>
