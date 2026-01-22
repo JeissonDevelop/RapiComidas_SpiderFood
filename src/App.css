@@ -68,11 +68,17 @@
   padding: 24px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
   transition: transform 0.2s, box-shadow 0.2s;
+  cursor: pointer;
 }
 
 .liApp:hover {
   transform: translateY(-2px);
   box-shadow: 0 3px 8px rgba(0, 0, 0, 0.12);
+}
+
+.liApp.outOfStock:hover {
+  transform: none;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
 .liApp p:first-child {
@@ -246,8 +252,10 @@
 
 .buttonGroup {
   display: flex;
-  gap: 12px;
-  margin-top: 20px;
+  gap: 10px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
 }
 
 .btnSubmit, .btnBack, .btnCancel {
@@ -286,6 +294,14 @@
 
 .btnCancel:hover {
   opacity: 0.9;
+}
+
+.toggleButton.ordersButton {
+  background-color: #3498db;
+}
+
+.toggleButton.ordersButton:hover {
+  background-color: #2980b9;
 }
 
 .formError{

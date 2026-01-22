@@ -1,0 +1,133 @@
+.pendingOrders {
+  padding: 20px;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.ordersTitle {
+  text-align: center;
+  color: #686868;
+  margin-bottom: 30px;
+  font-size: 24px;
+}
+
+.ordersList {
+  list-style: none;
+  padding: 0;
+}
+
+.orderItem {
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  transition: transform 0.2s;
+}
+
+.orderItem:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.orderHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 15px;
+  padding-bottom: 15px;
+  border-bottom: 2px solid #f0f0f0;
+}
+
+.orderId {
+  font-weight: bold;
+  color: #2c3e50;
+  font-size: 16px;
+  display: block;
+  margin-bottom: 5px;
+}
+
+.customerInfo {
+  color: #7f8c8d;
+  font-size: 13px;
+  margin: 0;
+}
+
+.orderDate {
+  color: #95a5a6;
+  font-size: 12px;
+  text-align: right;
+}
+
+.orderItems {
+  margin: 15px 0;
+}
+
+.orderItemDetail {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+  color: #555;
+  font-size: 14px;
+}
+
+.orderTotal {
+  text-align: right;
+  margin-top: 15px;
+  padding-top: 15px;
+  border-top: 2px solid #f0f0f0;
+  color: #2c3e50;
+  font-size: 18px;
+}
+
+.orderActions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 15px;
+}
+
+.orderStatus {
+  display: inline-block;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: bold;
+  flex: 1;
+}
+
+.orderStatus.pending {
+  background-color: #fff3cd;
+  color: #856404;
+}
+
+.btnComplete, .btnCancel {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btnComplete {
+  background-color: #27ae60;
+  color: white;
+}
+
+.btnComplete:hover {
+  background-color: #229954;
+  transform: scale(1.05);
+}
+
+.btnCancel {
+  background-color: #e74c3c;
+  color: white;
+}
+
+ btnCancel:hover {
+  background-color: #c0392b;
+  transform: scale(1.05);
+}

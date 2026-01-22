@@ -3,6 +3,7 @@ import React, {
   useCallback,
   useContext,
   useMemo,
+  useRef,
   useState,
 } from "react";
 import type { MenuItem } from "../entities/entities";
@@ -10,6 +11,16 @@ import type { MenuItem } from "../entities/entities";
 // Cart item incluye la cantidad agregada al carrito
 export interface CartItem extends MenuItem {
   cartQuantity: number;
+}
+
+export interface Order {
+  id: string;
+  items: Array<{ id: number; name: string; quantity: number; price: number }>;
+  total: number;
+  date: Date;
+  status: "pending" | "completed" | "cancelled";
+  customerName: string;
+  customerPhone: string;
 }
 
 interface StoreContextType {
@@ -26,6 +37,8 @@ interface StoreContextType {
   submitCart: (name: string, phone: string) => void;
   cancelCart: () => void;
   getAvailableStock: (foodId: number) => number;
+  orders: Order[];
+  updateOrderStatus: (orderId: string, status: Order["status"]) => void;
 }
 
 const StoreContext = createContext<StoreContextType | undefined>(undefined);
@@ -35,6 +48,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [selectedFood, setSelectedFood] = useState<MenuItem | null>(null);
   const [showCart, setShowCart] = useState(false);
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
+  const [orders, setOrders] = useState<Order[]>([]);
+  const isSubmittingRef = useRef(false);
   const [menuItems, setMenuItems] = useState<MenuItem[]>([
     {
       id: 1,
@@ -114,14 +129,48 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     setCartItems((prev) => prev.filter((item) => item.id !== foodId));
   }, []);
 
-  // Descuenta stock y limpia carrito al enviar pedido
-  const submitCart = useCallback((name: string, phone: string) => {
-    if (!name.trim() || !phone.trim()) return;
+  // Descuenta stock, guarda pedido y limpia carrito al enviar
+  const submitCart = useCallback(
+    (name: string, phone: string) => {
+      if (!name.trim() || !phone.trim()) return;
+      if (isSubmittingRef.current) return; // Prevenir doble envío
 
-    setCartItems((prevCart) => {
+      isSubmittingRef.current = true;
+
+      // Capturar el estado actual del carrito
+      const currentCart = cartItems;
+
+      if (currentCart.length === 0) {
+        isSubmittingRef.current = false;
+        return;
+      }
+
+      // Crear nuevo pedido
+      const newOrder: Order = {
+        id: `ORD-${Date.now()}`,
+        items: currentCart.map((item) => ({
+          id: item.id,
+          name: item.name,
+          quantity: item.cartQuantity,
+          price: item.price,
+        })),
+        total: currentCart.reduce(
+          (sum, item) => sum + item.price * item.cartQuantity,
+          0,
+        ),
+        date: new Date(),
+        status: "pending",
+        customerName: name,
+        customerPhone: phone,
+      };
+
+      // Agregar pedido a la lista
+      setOrders((prev) => [newOrder, ...prev]);
+
+      // Descontar stock del menú
       setMenuItems((prevMenu) =>
         prevMenu.map((m) => {
-          const itemInCart = prevCart.find((c) => c.id === m.id);
+          const itemInCart = currentCart.find((c) => c.id === m.id);
           if (!itemInCart) return m;
           return {
             ...m,
@@ -129,13 +178,54 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           };
         }),
       );
-      return [];
-    });
-  }, []);
+
+      // Limpiar carrito
+      setCartItems([]);
+
+      // Resetear flag después de un breve delay
+      setTimeout(() => {
+        isSubmittingRef.current = false;
+      }, 500);
+    },
+    [cartItems],
+  );
 
   const cancelCart = useCallback(() => {
     setCartItems([]);
   }, []);
+
+  const updateOrderStatus = useCallback(
+    (orderId: string, status: Order["status"]) => {
+      const order = orders.find((o) => o.id === orderId);
+
+      // Verificar que el pedido existe y está en estado correcto
+      if (!order || order.status !== "pending") {
+        return;
+      }
+
+      // Actualizar el estado del pedido
+      setOrders((prev) =>
+        prev.map((o) => (o.id === orderId ? { ...o, status } : o)),
+      );
+
+      // Si se cancela, restaurar stock
+      if (status === "cancelled") {
+        setMenuItems((prevMenu) =>
+          prevMenu.map((menuItem) => {
+            const orderItem = order.items.find(
+              (item) => item.id === menuItem.id,
+            );
+            if (!orderItem) return menuItem;
+            return {
+              ...menuItem,
+              quantity: menuItem.quantity + orderItem.quantity,
+            };
+          }),
+        );
+      }
+    },
+    [orders],
+  );
 
   const value = useMemo(
     () => ({
@@ -152,6 +242,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       submitCart,
       cancelCart,
       getAvailableStock,
+      orders,
+      updateOrderStatus,
     }),
     [
       isChooseFoodPage,
@@ -164,6 +256,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       submitCart,
       cancelCart,
       getAvailableStock,
+      orders,
+      updateOrderStatus,
     ],
   );
 
