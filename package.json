@@ -1,16 +1,19 @@
 {
   "name": "rapicomidas-spiderfood",
+  "homepage": "https://jeissondevelop.github.io/RapiComidas_SpiderFood/",
   "private": true,
-  "version": "0.0.0",
+  "version": "0.0.1",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "lint": "eslint .",
     "preview": "vite preview",
-    "test": "vitest --config vitest.config.ts"
+    "lint": "eslint . --max-warnings=5",
+    "test": "vitest --config vitest.config.ts",
+    "test:ui": "vitest --ui --config vitest.config.ts"
   },
   "dependencies": {
+    "firebase": "^12.8.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0"
   },

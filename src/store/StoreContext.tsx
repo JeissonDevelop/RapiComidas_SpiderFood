@@ -38,6 +38,7 @@ interface StoreContextType {
   cancelCart: () => void;
   getAvailableStock: (foodId: number) => number;
   orders: Order[];
+  setOrders: React.Dispatch<React.SetStateAction<Order[]>>;
   updateOrderStatus: (orderId: string, status: Order["status"]) => void;
 }
 
@@ -243,6 +244,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       cancelCart,
       getAvailableStock,
       orders,
+      setOrders,
       updateOrderStatus,
     }),
     [

@@ -1,75 +1,167 @@
-import { useState } from "react";
-import type { MenuItem } from "../../entities/entities";
+import React, { useState } from "react";
 import { useStore } from "../../store/StoreContext";
+import type { MenuItem } from "../../entities/entities";
+import Loading from "../Loading";
 
-interface FoodOrderProps {
+interface FoodDetailProps {
   foodItem: MenuItem;
   availableStock: number;
-  onAddToCart: (foodId: number, quantity: number) => void;
+  totalStock: number;
   onToBack: () => void;
-  onReturnToMenu: () => void;
 }
 
-function FoodOrder(props: FoodOrderProps) {
+const FoodDetail: React.FC<FoodDetailProps> = ({
+  foodItem,
+  availableStock,
+  onToBack,
+}) => {
+  const { addToCart } = useStore();
   const [quantity, setQuantity] = useState(1);
-  const { setSelectedFood } = useStore();
+  const [isAdding, setIsAdding] = useState(false);
+  const [addSuccess, setAddSuccess] = useState(false);
 
-  const handleAddToCart = () => {
-    // Añadimos al carrito usando la función del contexto
-    props.onAddToCart(props.foodItem.id, quantity);
-    setSelectedFood(null);
+  const handleAddToCart = async () => {
+    if (quantity > 0 && quantity <= availableStock) {
+      setIsAdding(true);
+      console.log(`📦 Agregando al carrito: ${foodItem.name} x${quantity}`);
+
+      try {
+        await new Promise((resolve) => setTimeout(resolve, 500));
+
+        addToCart(foodItem.id, quantity);
+        console.log(`✅ ${foodItem.name} x${quantity} agregado al carrito`);
+
+        setIsAdding(false);
+        setAddSuccess(true);
+
+        setTimeout(() => {
+          setAddSuccess(false);
+          onToBack();
+        }, 1500);
+      } catch (error) {
+        console.error("❌ Error al agregar al carrito:", error);
+        alert("Error al agregar el producto al carrito");
+        setIsAdding(false);
+      }
+    }
   };
 
   return (
-    <div className="foodOrderContainer">
-      <h4 className="foodOrderTitle">{props.foodItem.name}</h4>
-      <div className="foodOrderCard">
-        <img
-          className="foodOrderImg"
-          src={props.foodItem.image}
-          alt={props.foodItem.name}
-        />
-        <p className="foodOrderDesc">{props.foodItem.desc}</p>
-        <p className="foodOrderPrice">{props.foodItem.price * quantity}€</p>
+    <div className="foodDetailContainer">
+      {isAdding && <Loading message={`Agregando ${foodItem.name}...`} />}
 
-        <div className="foodOrderForm">
-          <div className="formGroup">
-            <label htmlFor="quantity">
-              Cantidad (Disponible: {props.availableStock})
-            </label>
-            <input
-              type="number"
-              id="quantity"
-              value={quantity}
-              onChange={(e) =>
-                setQuantity(
-                  Math.min(
-                    props.availableStock,
-                    Math.max(1, Number(e.target.value)),
-                  ),
-                )
-              }
-              min="1"
-              max={props.availableStock}
-            />
+      {addSuccess && (
+        <div style={successStyles}>
+          ✅ Producto agregado al carrito exitosamente
+        </div>
+      )}
+
+      <button className="btnBackDetail" onClick={onToBack}>
+        ← Volver al menú
+      </button>
+
+      <div className="foodDetailCard">
+        <div className="foodDetailImageContainer">
+          <img
+            src={foodItem.image}
+            alt={foodItem.name}
+            className="foodDetailImage"
+          />
+        </div>
+
+        <div className="foodDetailContent">
+          <h2 className="foodDetailName">{foodItem.name}</h2>
+
+          <p className="foodDetailDesc">{foodItem.desc}</p>
+
+          <div className="foodDetailInfo">
+            <div className="priceSection">
+              <span className="priceLabel">Precio:</span>
+              <span className="priceValue">{foodItem.price.toFixed(2)}€</span>
+            </div>
+
+            <div className="stockSection">
+              <span className="stockLabel">Stock disponible:</span>
+              <span
+                className={`stockValue ${
+                  availableStock === 0 ? "outOfStock" : ""
+                }`}
+              >
+                {availableStock === 0 ? "Sin stock" : `${availableStock}`}
+              </span>
+            </div>
           </div>
 
-          <div className="buttonGroup">
-            <button
-              className="btnSubmit"
-              onClick={handleAddToCart}
-              disabled={props.availableStock === 0}
-            >
-              Añadir al carrito
-            </button>
-            <button className="btnBack" onClick={props.onToBack}>
-              Volver al menú
-            </button>
-          </div>
+          {availableStock > 0 && (
+            <div className="quantitySection">
+              <label htmlFor="quantity">Cantidad:</label>
+              <div className="quantityControls">
+                <button
+                  className="btnQty"
+                  onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                  disabled={isAdding}
+                >
+                  −
+                </button>
+                <input
+                  id="quantity"
+                  type="number"
+                  min="1"
+                  max={availableStock}
+                  value={quantity}
+                  onChange={(e) => {
+                    const val = Number(e.target.value);
+                    if (val > 0 && val <= availableStock) {
+                      setQuantity(val);
+                    }
+                  }}
+                  disabled={isAdding}
+                  className="quantityInput"
+                />
+                <button
+                  className="btnQty"
+                  onClick={() =>
+                    setQuantity(Math.min(availableStock, quantity + 1))
+                  }
+                  disabled={isAdding}
+                >
+                  +
+                </button>
+              </div>
+            </div>
+          )}
+
+          <button
+            className="btnAddToCart"
+            onClick={handleAddToCart}
+            disabled={
+              availableStock === 0 || isAdding || quantity > availableStock
+            }
+          >
+            {availableStock === 0
+              ? "❌ Sin Stock"
+              : isAdding
+                ? "Agregando..."
+                : `✓ Agregar ${quantity} al Carrito`}
+          </button>
         </div>
       </div>
     </div>
   );
-}
+};
 
-export default FoodOrder;
+const successStyles = {
+  position: "fixed" as const,
+  top: "20px",
+  right: "20px",
+  background: "#27ae60",
+  color: "white",
+  padding: "15px 25px",
+  borderRadius: "8px",
+  boxShadow: "0 4px 12px rgba(0,0,0,0.2)",
+  zIndex: 10000,
+  fontSize: "16px",
+  fontWeight: "bold" as const,
+};
+
+export default FoodDetail;
