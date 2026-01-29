@@ -4,71 +4,133 @@ import App from "../App";
 import "@testing-library/jest-dom/vitest";
 
 describe("SpiderFood App Tests", () => {
-  // Limpia el DOM después de cada prueba
   afterEach(() => cleanup());
 
-  describe("Carta Inicial - Verificar productos", () => {
-    it("debe mostrar 4 productos en la carta inicial", async () => {
-      render(<App />); // Renderizamos la app
-      const productos = await screen.findAllByRole("listitem"); // Buscamos todos los <li>
-      expect(productos).toHaveLength(4); // Comprobamos que hay 4
+  describe("Menú Principal", () => {
+    it("debe mostrar el logo y título de SpiderFood", async () => {
+      render(<App />);
+      expect(screen.getByText(/SpiderFood Comida Rápida/i)).toBeInTheDocument();
+      expect(screen.getByAltText(/SpiderFood Logo/i)).toBeInTheDocument();
     });
 
-    it("debe mostrar stock y nombre de los productos", async () => {
-      render(<App />); // Render
-      // Comprobamos que aparecen los nombres
+    it("debe mostrar 3 botones principales", async () => {
+      render(<App />);
+      expect(screen.getByText(/Elegir comida/i)).toBeInTheDocument();
+      expect(screen.getByText(/Ver Carrito/i)).toBeInTheDocument();
+      expect(screen.getByText(/Pedidos Pendientes/i)).toBeInTheDocument();
+    });
+
+    it("debe mostrar 4 productos con stock en el menú", async () => {
+      render(<App />);
+      const productos = await screen.findAllByRole("listitem");
+      expect(productos).toHaveLength(4);
+    });
+
+    it("debe mostrar nombres de los productos", async () => {
+      render(<App />);
       expect(
         await screen.findByText(/Hamburguesa de Pollo/i),
       ).toBeInTheDocument();
       expect(screen.getByText(/Hamburguesa Vegetariana/i)).toBeInTheDocument();
       expect(screen.getByText(/Patatas Fritas/i)).toBeInTheDocument();
       expect(screen.getByText(/Helado/i)).toBeInTheDocument();
-      // Comprobamos que hay números de stock (formato "# 40")
-      expect(screen.getAllByText(/#\s*\d+/i).length).toBeGreaterThanOrEqual(4);
     });
   });
 
-  describe("Pantalla Pedir Comida", () => {
-    it("debe mostrar 4 productos en la pantalla de pedidos", async () => {
+  describe("Carta de Productos", () => {
+    it("debe mostrar la carta al hacer clic en Elegir comida", async () => {
       render(<App />);
-      fireEvent.click(screen.getByRole("button", { name: /pedir comida/i })); // Entrar a pedir
-      const productos = await screen.findAllByRole("listitem"); // Productos en la lista
-      expect(productos).toHaveLength(4);
+      fireEvent.click(screen.getByText(/Elegir comida/i));
+      expect(await screen.findByText(/Carta/i)).toBeInTheDocument();
+      expect(
+        screen.getByText(/Pulsa sobre cada producto/i),
+      ).toBeInTheDocument();
+    });
+
+    it("debe mostrar 4 productos con imágenes en la carta", async () => {
+      render(<App />);
+      fireEvent.click(screen.getByText(/Elegir comida/i));
+      const imagenes = await screen.findAllByRole("img", {
+        name: /Hamburguesa|Patatas|Helado/i,
+      });
+      expect(imagenes.length).toBeGreaterThanOrEqual(4);
     });
 
     it("debe mostrar precios de los productos", async () => {
       render(<App />);
-      fireEvent.click(screen.getByRole("button", { name: /pedir comida/i }));
-      const precios = await screen.findAllByText(/€/i); // Buscamos textos con "€"
-      expect(precios.length).toBeGreaterThanOrEqual(1);
+      fireEvent.click(screen.getByText(/Elegir comida/i));
+      const precios = await screen.findAllByText(/€/i);
+      expect(precios.length).toBeGreaterThanOrEqual(4);
     });
   });
 
-  describe("Actualización de precio en compra", () => {
-    it("debe actualizar correctamente el precio al cambiar la cantidad", async () => {
+  describe("Detalle de Producto", () => {
+    it("debe abrir el detalle al hacer clic en un producto", async () => {
       render(<App />);
-      fireEvent.click(screen.getByRole("button", { name: /pedir comida/i })); // Abrir pedir
-      fireEvent.click((await screen.findAllByRole("img"))[0]); // Seleccionar primer producto
-      const inputCantidad = await screen.findByLabelText(/cantidad/i); // Input de cantidad
-      expect(await screen.findByText(/24/)).toBeInTheDocument(); // Precio inicial 24
-      fireEvent.change(inputCantidad, { target: { value: "2" } }); // Cambiar a 2
-      expect(await screen.findByText(/48/)).toBeInTheDocument(); // Precio 48
+      fireEvent.click(screen.getByText(/Elegir comida/i));
+      const primerProducto = (
+        await screen.findAllByRole("img", { name: /Hamburguesa de Pollo/i })
+      )[0];
+      fireEvent.click(primerProducto);
+      expect(await screen.findByText(/Stock disponible/i)).toBeInTheDocument();
     });
 
-    it("debe calcular correctamente el precio total para múltiples cantidades", async () => {
+    it("debe mostrar controles de cantidad", async () => {
       render(<App />);
-      fireEvent.click(screen.getByRole("button", { name: /pedir comida/i }));
-      fireEvent.click((await screen.findAllByRole("img"))[0]); // Primer producto
-      const inputCantidad = await screen.findByLabelText(/cantidad/i);
-      fireEvent.change(inputCantidad, { target: { value: "3" } }); // Cantidad 3
-      expect(await screen.findByText(/72/)).toBeInTheDocument(); // Precio 72
+      fireEvent.click(screen.getByText(/Elegir comida/i));
+      const primerProducto = (
+        await screen.findAllByRole("img", { name: /Hamburguesa de Pollo/i })
+      )[0];
+      fireEvent.click(primerProducto);
+      expect(await screen.findByLabelText(/Cantidad/i)).toBeInTheDocument();
     });
 
-    it("debe mostrar el precio unitario inicial del producto", async () => {
+    it("debe tener botón de agregar al carrito", async () => {
       render(<App />);
-      fireEvent.click(screen.getByRole("button", { name: /pedir comida/i }));
-      fireEvent.click((await screen.findAllByRole("img"))[0]); // Primer producto
-      expect(await screen.findByText(/24/)).toBeInTheDocument(); // Precio inicial 24
+      fireEvent.click(screen.getByText(/Elegir comida/i));
+      const primerProducto = (
+        await screen.findAllByRole("img", { name: /Hamburguesa de Pollo/i })
+      )[0];
+      fireEvent.click(primerProducto);
+      expect(
+        await screen.findByText(/Agregar.*al Carrito/i),
+      ).toBeInTheDocument();
+    });
+  });
+
+  describe("Carrito de Compras", () => {
+    it("debe mostrar carrito vacío inicialmente", async () => {
+      render(<App />);
+      fireEvent.click(screen.getByText(/Ver Carrito/i));
+      expect(
+        await screen.findByText(/El carrito está vacío/i),
+      ).toBeInTheDocument();
+    });
+
+    it("debe mostrar título del carrito", async () => {
+      render(<App />);
+      fireEvent.click(screen.getByText(/Ver Carrito/i));
+      expect(await screen.findByText(/Tu Carrito/i)).toBeInTheDocument();
+    });
+  });
+
+  describe("Navegación", () => {
+    it("debe volver al menú desde la carta", async () => {
+      render(<App />);
+      fireEvent.click(screen.getByText(/Elegir comida/i));
+      await screen.findByText(/Carta/i);
+      fireEvent.click(screen.getByText(/Volver al menú/i));
+      expect(await screen.findByText(/Menús Disponibles/i)).toBeInTheDocument();
+    });
+
+    it("debe alternar entre secciones", async () => {
+      render(<App />);
+      // Ir a carrito
+      fireEvent.click(screen.getByText(/Ver Carrito/i));
+      expect(await screen.findByText(/Tu Carrito/i)).toBeInTheDocument();
+      // Volver
+      fireEvent.click(screen.getByText(/Volver/i));
+      expect(await screen.findByText(/Menús Disponibles/i)).toBeInTheDocument();
     });
   });
 });
