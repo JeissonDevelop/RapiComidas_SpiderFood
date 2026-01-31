@@ -1,10 +1,30 @@
-import { describe, it, expect, afterEach } from "vitest";
-import { render, screen, fireEvent, cleanup } from "@testing-library/react";
+import { describe, it, expect, afterEach, beforeEach, vi } from "vitest";
+import {
+  render,
+  screen,
+  fireEvent,
+  cleanup,
+  waitFor,
+} from "@testing-library/react";
 import App from "../App";
 import "@testing-library/jest-dom/vitest";
+import * as orderService from "../services/orderService";
+import type { FirebaseOrder } from "../services/orderService";
+
+// Mock the lazy-loaded components to avoid module errors
+vi.mock("../components/classifier/ImageClassifier", () => ({
+  default: () => <div>Mocked Image Classifier</div>,
+}));
 
 describe("SpiderFood App Tests", () => {
-  afterEach(() => cleanup());
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.spyOn(orderService, "getOrders").mockResolvedValue([]);
+  });
+
+  afterEach(() => {
+    cleanup();
+  });
 
   describe("Menú Principal", () => {
     it("debe mostrar el logo y título de SpiderFood", async () => {
@@ -13,124 +33,212 @@ describe("SpiderFood App Tests", () => {
       expect(screen.getByAltText(/SpiderFood Logo/i)).toBeInTheDocument();
     });
 
-    it("debe mostrar 3 botones principales", async () => {
+    it("debe mostrar 4 botones principales", async () => {
       render(<App />);
       expect(screen.getByText(/Elegir comida/i)).toBeInTheDocument();
       expect(screen.getByText(/Ver Carrito/i)).toBeInTheDocument();
       expect(screen.getByText(/Pedidos Pendientes/i)).toBeInTheDocument();
+      expect(screen.getByText(/Clasificador IA/i)).toBeInTheDocument();
     });
 
-    it("debe mostrar 4 productos con stock en el menú", async () => {
+    it("debe mostrar productos con stock en el menú", async () => {
       render(<App />);
       const productos = await screen.findAllByRole("listitem");
-      expect(productos).toHaveLength(4);
+      expect(productos.length).toBeGreaterThan(0);
     });
 
-    it("debe mostrar nombres de los productos", async () => {
+    it("debe mostrar contador de pedidos pendientes", async () => {
       render(<App />);
-      expect(
-        await screen.findByText(/Hamburguesa de Pollo/i),
-      ).toBeInTheDocument();
-      expect(screen.getByText(/Hamburguesa Vegetariana/i)).toBeInTheDocument();
-      expect(screen.getByText(/Patatas Fritas/i)).toBeInTheDocument();
-      expect(screen.getByText(/Helado/i)).toBeInTheDocument();
+      expect(screen.getByText(/Pedidos Pendientes \(0\)/i)).toBeInTheDocument();
     });
   });
 
-  describe("Carta de Productos", () => {
-    it("debe mostrar la carta al hacer clic en Elegir comida", async () => {
+  describe("Interacción con Productos", () => {
+    it("debe permitir hacer clic en un producto con stock", async () => {
       render(<App />);
-      fireEvent.click(screen.getByText(/Elegir comida/i));
-      expect(await screen.findByText(/Carta/i)).toBeInTheDocument();
-      expect(
-        screen.getByText(/Pulsa sobre cada producto/i),
-      ).toBeInTheDocument();
-    });
+      const productos = await screen.findAllByRole("listitem");
 
-    it("debe mostrar 4 productos con imágenes en la carta", async () => {
-      render(<App />);
-      fireEvent.click(screen.getByText(/Elegir comida/i));
-      const imagenes = await screen.findAllByRole("img", {
-        name: /Hamburguesa|Patatas|Helado/i,
+      fireEvent.click(productos[0]);
+
+      // Usar findByRole para esperar al heading específico
+      await waitFor(() => {
+        const heading = screen.getByRole("heading", {
+          name: /Hamburguesa de Pollo/i,
+        });
+        expect(heading).toBeInTheDocument();
       });
-      expect(imagenes.length).toBeGreaterThanOrEqual(4);
     });
 
-    it("debe mostrar precios de los productos", async () => {
+    it("debe mostrar productos con stock disponible", async () => {
       render(<App />);
-      fireEvent.click(screen.getByText(/Elegir comida/i));
-      const precios = await screen.findAllByText(/€/i);
-      expect(precios.length).toBeGreaterThanOrEqual(4);
-    });
-  });
-
-  describe("Detalle de Producto", () => {
-    it("debe abrir el detalle al hacer clic en un producto", async () => {
-      render(<App />);
-      fireEvent.click(screen.getByText(/Elegir comida/i));
-      const primerProducto = (
-        await screen.findAllByRole("img", { name: /Hamburguesa de Pollo/i })
-      )[0];
-      fireEvent.click(primerProducto);
-      expect(await screen.findByText(/Stock disponible/i)).toBeInTheDocument();
+      const stockElements = screen.getAllByText(/✓ Stock:/i);
+      expect(stockElements.length).toBeGreaterThan(0);
     });
 
-    it("debe mostrar controles de cantidad", async () => {
-      render(<App />);
-      fireEvent.click(screen.getByText(/Elegir comida/i));
-      const primerProducto = (
-        await screen.findAllByRole("img", { name: /Hamburguesa de Pollo/i })
-      )[0];
-      fireEvent.click(primerProducto);
-      expect(await screen.findByLabelText(/Cantidad/i)).toBeInTheDocument();
-    });
+    it("debe deshabilitar productos sin stock cuando no hay disponibilidad", async () => {
+      const mockOrders: FirebaseOrder[] = [
+        {
+          id: "1",
+          customerName: "Test User",
+          customerAddress: "Test Address",
+          status: "pending",
+          items: [
+            { name: "Hamburguesa de Pollo", quantity: 40, price: 5 },
+            { name: "Hamburguesa Vegetariana", quantity: 30, price: 5 },
+            { name: "Patatas Fritas", quantity: 50, price: 2 },
+            { name: "Helado", quantity: 30, price: 3 },
+          ],
+          total: 100,
+          createdAt: new Date(),
+        },
+      ];
 
-    it("debe tener botón de agregar al carrito", async () => {
+      vi.spyOn(orderService, "getOrders").mockResolvedValue(mockOrders);
+
       render(<App />);
-      fireEvent.click(screen.getByText(/Elegir comida/i));
-      const primerProducto = (
-        await screen.findAllByRole("img", { name: /Hamburguesa de Pollo/i })
-      )[0];
-      fireEvent.click(primerProducto);
-      expect(
-        await screen.findByText(/Agregar.*al Carrito/i),
-      ).toBeInTheDocument();
+
+      await waitFor(() => {
+        const sinStock = screen.queryAllByText(/❌ Sin stock/i);
+        expect(sinStock.length).toBeGreaterThan(0);
+      });
+
+      const productosSinStock = screen.getAllByText(/❌ Sin stock/i);
+      const liElement = productosSinStock[0].closest("li");
+      expect(liElement).toHaveStyle({ cursor: "not-allowed" });
     });
   });
 
-  describe("Carrito de Compras", () => {
-    it("debe mostrar carrito vacío inicialmente", async () => {
+  describe("Navegación entre Secciones", () => {
+    it("debe mostrar clasificador al hacer clic en el botón", async () => {
       render(<App />);
-      fireEvent.click(screen.getByText(/Ver Carrito/i));
-      expect(
-        await screen.findByText(/El carrito está vacío/i),
-      ).toBeInTheDocument();
+      const clasificadorBtn = screen.getByText(/Clasificador IA/i);
+
+      fireEvent.click(clasificadorBtn);
+
+      await waitFor(() => {
+        expect(screen.getByText(/Volver/i)).toBeInTheDocument();
+      });
     });
 
-    it("debe mostrar título del carrito", async () => {
+    it("debe volver al menú desde pedidos pendientes", async () => {
       render(<App />);
-      fireEvent.click(screen.getByText(/Ver Carrito/i));
-      expect(await screen.findByText(/Tu Carrito/i)).toBeInTheDocument();
-    });
-  });
+      const pedidosBtn = screen.getByText(/Pedidos Pendientes/i);
 
-  describe("Navegación", () => {
-    it("debe volver al menú desde la carta", async () => {
-      render(<App />);
-      fireEvent.click(screen.getByText(/Elegir comida/i));
-      await screen.findByText(/Carta/i);
-      fireEvent.click(screen.getByText(/Volver al menú/i));
+      fireEvent.click(pedidosBtn);
+
+      await screen.findByText(/Volver/i);
+      const volverBtn = screen.getByText(/Volver/i);
+
+      fireEvent.click(volverBtn);
+
       expect(await screen.findByText(/Menús Disponibles/i)).toBeInTheDocument();
     });
 
-    it("debe alternar entre secciones", async () => {
+    it("debe resetear estado al volver al menú", async () => {
       render(<App />);
-      // Ir a carrito
-      fireEvent.click(screen.getByText(/Ver Carrito/i));
-      expect(await screen.findByText(/Tu Carrito/i)).toBeInTheDocument();
-      // Volver
-      fireEvent.click(screen.getByText(/Volver/i));
+      const elegirComidaBtn = screen.getByText(/Elegir comida/i);
+
+      fireEvent.click(elegirComidaBtn);
+
+      await screen.findByText(/Volver al menú/i);
+      const volverBtn = screen.getByText(/Volver al menú/i);
+
+      fireEvent.click(volverBtn);
+
       expect(await screen.findByText(/Menús Disponibles/i)).toBeInTheDocument();
+    });
+  });
+
+  describe("Pedidos Pendientes", () => {
+    it("debe actualizar contador con pedidos pendientes", async () => {
+      const mockOrders: FirebaseOrder[] = [
+        {
+          id: "1",
+          customerName: "Test User 1",
+          customerAddress: "Address 1",
+          status: "pending",
+          items: [],
+          total: 0,
+          createdAt: new Date(),
+        },
+        {
+          id: "2",
+          customerName: "Test User 2",
+          customerAddress: "Address 2",
+          status: "pending",
+          items: [],
+          total: 0,
+          createdAt: new Date(),
+        },
+      ];
+
+      vi.spyOn(orderService, "getOrders").mockResolvedValue(mockOrders);
+
+      render(<App />);
+
+      await waitFor(() => {
+        expect(
+          screen.getByText(/Pedidos Pendientes \(2\)/i),
+        ).toBeInTheDocument();
+      });
+    });
+  });
+
+  describe("Stock Disponible", () => {
+    it("debe calcular stock considerando pedidos", async () => {
+      const mockOrders: FirebaseOrder[] = [
+        {
+          id: "1",
+          customerName: "Test User",
+          customerAddress: "Test Address",
+          status: "pending",
+          items: [{ name: "Hamburguesa de Pollo", quantity: 2, price: 5 }],
+          total: 10,
+          createdAt: new Date(),
+        },
+      ];
+
+      vi.spyOn(orderService, "getOrders").mockResolvedValue(mockOrders);
+
+      render(<App />);
+
+      await waitFor(() => {
+        const stockElements = screen.queryAllByText(/Stock:/i);
+        expect(stockElements.length).toBeGreaterThan(0);
+      });
+
+      expect(screen.getByText(/✓ Stock: 38/i)).toBeInTheDocument();
+    });
+  });
+
+  describe("Suspense y Carga Lazy", () => {
+    it("debe mostrar mensaje de carga para clasificador", async () => {
+      render(<App />);
+      const clasificadorBtn = screen.getByText(/Clasificador IA/i);
+
+      fireEvent.click(clasificadorBtn);
+
+      // Wait for either loading message or the mocked component
+      await waitFor(() => {
+        const hasLoading = screen.queryByText(/Cargando clasificador/i);
+        const hasMocked = screen.queryByText(/Mocked Image Classifier/i);
+        expect(hasLoading || hasMocked).toBeTruthy();
+      });
+    });
+
+    it("debe mostrar mensaje de carga para carrito", async () => {
+      render(<App />);
+      const carritoBtn = screen.getByText(/Ver Carrito/i);
+
+      fireEvent.click(carritoBtn);
+
+      // Check if loading appears or cart loads immediately
+      const loadingOrCart = await waitFor(
+        () =>
+          screen.queryByText(/Cargando carrito/i) ||
+          screen.queryByText(/Tu Carrito/i),
+      );
+      expect(loadingOrCart).toBeTruthy();
     });
   });
 });

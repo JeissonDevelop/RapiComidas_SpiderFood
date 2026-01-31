@@ -10,6 +10,9 @@ const Cart = React.lazy(() => import("./components/foods/Cart"));
 const PendingOrders = React.lazy(
   () => import("./components/orders/PendingOrders"),
 );
+const ImageClassifier = React.lazy(
+  () => import("./components/classifier/ImageClassifier"),
+);
 
 function AppContent() {
   const {
@@ -24,6 +27,7 @@ function AppContent() {
   const [showCart, setShowCart] = React.useState(false);
   const [pendingOrdersCount, setPendingOrdersCount] = useState(0);
   const [allOrders, setAllOrders] = useState<FirebaseOrder[]>([]);
+  const [showClassifier, setShowClassifier] = useState(false);
 
   useEffect(() => {
     const loadPendingOrders = async () => {
@@ -83,6 +87,7 @@ function AppContent() {
                 setSelectedFood(null);
                 setShowOrders(false);
                 setShowCart(false);
+                setShowClassifier(false);
               }}
             >
               {isChooseFoodPage ? "Volver al menú" : "🍔 Elegir comida"}
@@ -95,6 +100,7 @@ function AppContent() {
                 setIsChooseFoodPage(false);
                 setShowOrders(false);
                 setSelectedFood(null);
+                setShowClassifier(false);
               }}
             >
               {showCart ? "Volver" : "🛒 Ver Carrito"}
@@ -107,11 +113,25 @@ function AppContent() {
                 setIsChooseFoodPage(false);
                 setShowCart(false);
                 setSelectedFood(null);
+                setShowClassifier(false);
               }}
             >
               {showOrders
                 ? "Volver"
                 : `📋 Pedidos Pendientes (${pendingOrdersCount})`}
+            </button>
+
+            <button
+              className="toggleButton classifierButton"
+              onClick={() => {
+                setShowClassifier(!showClassifier);
+                setIsChooseFoodPage(false);
+                setShowOrders(false);
+                setShowCart(false);
+                setSelectedFood(null);
+              }}
+            >
+              {showClassifier ? "Volver" : "🖼️ Clasificador IA"}
             </button>
           </div>
 
@@ -120,7 +140,11 @@ function AppContent() {
             SpiderFood Comida Rápida
           </h3>
 
-          {showOrders ? (
+          {showClassifier ? (
+            <Suspense fallback={<div>Cargando clasificador...</div>}>
+              <ImageClassifier />
+            </Suspense>
+          ) : showOrders ? (
             <Suspense fallback={<div>Cargando pedidos...</div>}>
               <PendingOrders />
             </Suspense>
