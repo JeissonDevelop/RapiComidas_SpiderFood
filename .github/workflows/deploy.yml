@@ -27,7 +27,9 @@ jobs:
       - name: Build
         env:
           VITE_DEEPL_API_KEY: ${{ secrets.VITE_DEEPL_API_KEY }}
-        run: npm run build
+        run: |
+          echo "Building with API key configured: $([ -n "$VITE_DEEPL_API_KEY" ] && echo 'YES' || echo 'NO')"
+          npm run build
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
