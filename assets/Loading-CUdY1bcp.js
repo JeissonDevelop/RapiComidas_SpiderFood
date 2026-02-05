@@ -1,0 +1,1 @@
+import{j as s}from"./index-DaKuGouW.js";const o=({message:a="Cargando..."})=>(console.log("⏳ Mostrando loading:",a),s.jsx("div",{className:"loadingOverlay",children:s.jsxs("div",{className:"loadingContent",children:[s.jsx("div",{className:"spinner"}),s.jsx("p",{className:"loadingMessage",children:a})]})}));export{o as L};
