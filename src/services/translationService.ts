@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const DEEPL_API_KEY = import.meta.env.VITE_DEEPL_API_KEY || "test-key";
-const DEEPL_API_URL = "/api/translate";
+const DEEPL_API_URL = "https://api-free.deepl.com/v1/translate";
 
 export interface TranslationResult {
   originalText: string;
@@ -20,7 +20,7 @@ const normalizeTextForDeepL = (text: string): string => {
 };
 
 /**
- * Traduce un texto usando la API de DeepL
+ * Traduce un texto usando la API de DeepL directamente
  */
 export const translateText = async (
   text: string,
@@ -41,7 +41,7 @@ export const translateText = async (
     const normalizedText = normalizeTextForDeepL(text);
     console.log(`📝 Texto normalizado: "${normalizedText}"`);
 
-    // ✅ IMPORTANTE: Usar URLSearchParams directamente con el proxy
+    // ✅ CAMBIO: Llamada directa a DeepL API
     const params = new URLSearchParams();
     params.append("text", normalizedText);
     params.append("target_lang", targetLanguage);
