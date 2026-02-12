@@ -1,59 +1,45 @@
 import React, { useEffect, useState } from "react";
+import { useAppDispatch, useAppSelector } from "../../store/hooks";
 import {
-  getOrders,
-  updateOrderStatus,
-  deleteOrder,
-  type FirebaseOrder,
-  updateOrderAddress,
-} from "../../services/orderService";
+  fetchOrders,
+  updateOrderStatusAsync,
+  updateOrderAddressAsync,
+  deleteMultipleOrdersAsync,
+} from "../../store/slices/ordersSlice";
+import type { FirebaseOrder } from "../../services/orderService";
 import Loading from "../Loading";
 import "./PendingOrders.css";
 
 type OrderStatus = "pending" | "completed" | "cancelled";
 
 const PendingOrders: React.FC = () => {
-  const [orders, setOrders] = useState<FirebaseOrder[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const dispatch = useAppDispatch();
+  const orders = useAppSelector((state) => state.orders.orders);
+  const { currentOperation } = useAppSelector((state) => state.orders);
+
   const [activeStatus, setActiveStatus] = useState<OrderStatus>("pending");
   const [editingOrderId, setEditingOrderId] = useState<string | null>(null);
   const [addressDraft, setAddressDraft] = useState<string>("");
   const [successMessage, setSuccessMessage] = useState<string>("");
 
   useEffect(() => {
-    loadOrders();
-  }, []);
-
-  const loadOrders = async () => {
-    try {
-      console.log("📥 Cargando pedidos...");
-      setLoading(true);
-      const fetchedOrders = await getOrders();
-      setOrders(fetchedOrders);
-    } catch (error) {
-      console.error("Error al cargar pedidos:", error);
-      alert("Error al cargar los pedidos");
-    } finally {
-      setLoading(false);
-    }
-  };
+    dispatch(fetchOrders());
+  }, [dispatch]);
 
   const handleComplete = async (orderId: string) => {
     if (!orderId) return;
 
-    setActionLoading(orderId);
     console.log(`✅ Completando pedido ${orderId}`);
 
     try {
-      await updateOrderStatus(orderId, "completed");
-      await loadOrders();
+      await dispatch(
+        updateOrderStatusAsync({ orderId, status: "completed" }),
+      ).unwrap();
       setSuccessMessage("✅ Pedido completado exitosamente");
-      setTimeout(() => setSuccessMessage(""), 3000);
+      setTimeout(() => setSuccessMessage(""), 3500);
     } catch (error) {
       console.error("Error al completar pedido:", error);
       alert("Error al completar el pedido");
-    } finally {
-      setActionLoading(null);
     }
   };
 
@@ -62,19 +48,21 @@ const PendingOrders: React.FC = () => {
 
     if (!confirm("¿Estás seguro de cancelar este pedido?")) return;
 
-    setActionLoading(orderId);
     console.log(`❌ Cancelando pedido ${orderId}`);
 
     try {
-      await updateOrderStatus(orderId, "cancelled");
-      await loadOrders();
+      await dispatch(
+        updateOrderStatusAsync({ orderId, status: "cancelled" }),
+      ).unwrap();
+
+      // El stock se calcula dinámicamente en App.tsx con getAvailableStockWithOrders
+      // No es necesario restaurarlo manualmente aquí
+
       setSuccessMessage("❌ Pedido cancelado exitosamente");
       setTimeout(() => setSuccessMessage(""), 3000);
     } catch (error) {
       console.error("Error al cancelar pedido:", error);
       alert("Error al cancelar el pedido");
-    } finally {
-      setActionLoading(null);
     }
   };
 
@@ -94,17 +82,14 @@ const PendingOrders: React.FC = () => {
       return;
     }
 
-    setActionLoading("deleting-all");
     console.log(`🗑️ Eliminando todos los pedidos ${activeStatus}`);
 
     try {
-      for (const order of ordersToDelete) {
-        if (order.id) {
-          await deleteOrder(order.id);
-        }
-      }
+      const orderIds = ordersToDelete
+        .map((o) => o.id)
+        .filter((id): id is string => !!id);
+      await dispatch(deleteMultipleOrdersAsync(orderIds)).unwrap();
       console.log("✅ Todos los pedidos fueron eliminados");
-      await loadOrders();
       setSuccessMessage(
         `🗑️ ${ordersToDelete.length} pedidos eliminados exitosamente`,
       );
@@ -112,8 +97,6 @@ const PendingOrders: React.FC = () => {
     } catch (error) {
       console.error("Error al eliminar pedidos:", error);
       alert("Error al eliminar los pedidos");
-    } finally {
-      setActionLoading(null);
     }
   };
 
@@ -128,10 +111,6 @@ const PendingOrders: React.FC = () => {
   };
 
   const currentOrders = getOrdersByStatus(activeStatus);
-
-  if (loading) {
-    return <Loading message="Cargando pedidos..." />;
-  }
 
   const handleStartEditAddress = (order: FirebaseOrder) => {
     if (!order.id) return;
@@ -152,23 +131,22 @@ const PendingOrders: React.FC = () => {
       return;
     }
 
-    setActionLoading(orderId);
     try {
-      await updateOrderAddress(orderId, nextAddress);
-      await loadOrders();
+      await dispatch(
+        updateOrderAddressAsync({ orderId, address: nextAddress }),
+      ).unwrap();
       handleCancelEditAddress();
       setSuccessMessage("✅ Dirección actualizada exitosamente");
       setTimeout(() => setSuccessMessage(""), 3000);
     } catch (error) {
       console.error("Error al actualizar dirección:", error);
       alert("Error al actualizar la dirección");
-    } finally {
-      setActionLoading(null);
     }
   };
 
   return (
     <div className="pendingOrders">
+      {currentOperation && <Loading message={currentOperation} />}
       {successMessage && <div style={successStyles}>{successMessage}</div>}
 
       <h2 className="ordersTitle">📋 Gestión de Pedidos</h2>
@@ -191,9 +169,9 @@ const PendingOrders: React.FC = () => {
           <button
             className="btnDeleteAll"
             onClick={handleDeleteAll}
-            disabled={actionLoading === "deleting-all"}
+            disabled={!!currentOperation}
           >
-            {actionLoading === "deleting-all"
+            {currentOperation
               ? "🗑️ Eliminando..."
               : `🗑️ Borrar todos (${currentOrders.length})`}
           </button>
@@ -227,9 +205,9 @@ const PendingOrders: React.FC = () => {
                         <button
                           className="btnComplete"
                           onClick={() => handleSaveAddress(order.id!)}
-                          disabled={actionLoading === order.id}
+                          disabled={!!currentOperation}
                         >
-                          {actionLoading === order.id ? "..." : "✓ Guardar"}
+                          {currentOperation ? "..." : "✓ Guardar"}
                         </button>
                         <button
                           className="btnCancel"
@@ -288,16 +266,16 @@ const PendingOrders: React.FC = () => {
                     <button
                       className="btnComplete"
                       onClick={() => handleComplete(order.id!)}
-                      disabled={actionLoading === order.id}
+                      disabled={!!currentOperation}
                     >
-                      {actionLoading === order.id ? "..." : "✓ Completar"}
+                      {currentOperation ? "..." : "✓ Completar"}
                     </button>
                     <button
                       className="btnCancel"
                       onClick={() => handleCancel(order.id!)}
-                      disabled={actionLoading === order.id}
+                      disabled={!!currentOperation}
                     >
-                      {actionLoading === order.id ? "..." : "✕ Cancelar"}
+                      {currentOperation ? "..." : "✕ Cancelar"}
                     </button>
                   </>
                 )}

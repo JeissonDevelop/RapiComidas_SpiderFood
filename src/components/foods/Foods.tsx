@@ -1,8 +1,10 @@
-import { useStore } from "../../store/StoreContext";
+import { useAppDispatch, useAppSelector } from "../../store/hooks";
+import { setSelectedFood } from "../../store/slices/uiSlice";
 
 function Foods() {
-  // Consumimos menú y selección desde contexto global
-  const { menuItems, setSelectedFood } = useStore();
+  const dispatch = useAppDispatch();
+  const menuItems = useAppSelector((state) => state.menu.items);
+
   return (
     <>
       <h4 className="foodTitle">Carta</h4>
@@ -22,7 +24,9 @@ function Foods() {
             <li
               key={item.id}
               className={`liFoods ${item.quantity === 0 ? "outOfStock" : ""}`}
-              onClick={() => item.quantity > 0 && setSelectedFood(item)}
+              onClick={() =>
+                item.quantity > 0 && dispatch(setSelectedFood(item))
+              }
               style={
                 item.quantity === 0
                   ? { opacity: 0.5, cursor: "not-allowed" }

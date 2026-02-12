@@ -1,15 +1,18 @@
 import React, { useState } from "react";
-import { createOrder } from "../../services/orderService";
+import { useAppDispatch, useAppSelector } from "../../store/hooks";
+import { removeFromCart, clearCart } from "../../store/slices/cartSlice";
+import { createOrderAsync } from "../../store/slices/ordersSlice";
 import Loading from "../Loading";
-import { useStore } from "../../store/StoreContext";
 
 interface FoodOrderProps {
   onReturnToMenu: () => void;
 }
 
 const FoodOrder: React.FC<FoodOrderProps> = ({ onReturnToMenu }) => {
-  const { cartItems, removeFromCart, submitCart } = useStore();
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const dispatch = useAppDispatch();
+  const cartItems = useAppSelector((state) => state.cart.items);
+  const { currentOperation } = useAppSelector((state) => state.orders);
+
   const [orderSuccess, setOrderSuccess] = useState(false);
   const [customerName, setCustomerName] = useState("");
   const [customerAddress, setCustomerAddress] = useState("");
@@ -24,7 +27,7 @@ const FoodOrder: React.FC<FoodOrderProps> = ({ onReturnToMenu }) => {
 
   const handleRemoveFromCart = (foodId: number) => {
     console.log(`🗑️ Removiendo producto ${foodId} del carrito`);
-    removeFromCart(foodId);
+    dispatch(removeFromCart(foodId));
     setRemoveSuccess(true);
     setTimeout(() => setRemoveSuccess(false), 2000);
   };
@@ -42,7 +45,6 @@ const FoodOrder: React.FC<FoodOrderProps> = ({ onReturnToMenu }) => {
       return;
     }
 
-    setIsSubmitting(true);
     console.log("🚀 Iniciando envío de pedido...");
 
     try {
@@ -58,11 +60,14 @@ const FoodOrder: React.FC<FoodOrderProps> = ({ onReturnToMenu }) => {
         status: "pending" as const,
       };
 
-      const orderId = await createOrder(orderData);
-      console.log("🎉 ¡Pedido creado exitosamente!", orderId);
+      await dispatch(createOrderAsync(orderData)).unwrap();
+      console.log("🎉 ¡Pedido creado exitosamente!");
 
-      // Guardar en el contexto también (para historial local)
-      submitCart(customerName, customerAddress);
+      // El stock se calcula dinámicamente en App.tsx con getAvailableStockWithOrders
+      // No es necesario descontarlo manualmente aquí
+
+      // Limpiar carrito
+      dispatch(clearCart());
 
       setOrderSuccess(true);
       setCustomerName("");
@@ -75,14 +80,12 @@ const FoodOrder: React.FC<FoodOrderProps> = ({ onReturnToMenu }) => {
     } catch (error) {
       console.error("💥 Error al crear pedido:", error);
       alert("Error al crear el pedido. Por favor intenta nuevamente.");
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
   return (
     <div>
-      {isSubmitting && <Loading message="Creando tu pedido..." />}
+      {currentOperation && <Loading message={currentOperation} />}
 
       {orderSuccess && (
         <div style={successStyles}>✅ ¡Pedido creado exitosamente!</div>
@@ -162,7 +165,7 @@ const FoodOrder: React.FC<FoodOrderProps> = ({ onReturnToMenu }) => {
               <button
                 type="submit"
                 className="btnSubmit"
-                disabled={isSubmitting}
+                disabled={!!currentOperation}
               >
                 ✓ Crear Pedido
               </button>

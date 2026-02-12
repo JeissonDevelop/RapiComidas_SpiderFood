@@ -1,5 +1,7 @@
 import React, { useState } from "react";
-import { useStore } from "../../store/StoreContext";
+import { useAppDispatch } from "../../store/hooks";
+import { addToCart } from "../../store/slices/cartSlice";
+import { setShowCart } from "../../store/slices/uiSlice";
 import type { MenuItem } from "../../entities/entities";
 import Loading from "../Loading";
 
@@ -15,7 +17,7 @@ const FoodDetail: React.FC<FoodDetailProps> = ({
   availableStock,
   onToBack,
 }) => {
-  const { addToCart } = useStore();
+  const dispatch = useAppDispatch();
   const [quantity, setQuantity] = useState(1);
   const [isAdding, setIsAdding] = useState(false);
   const [addSuccess, setAddSuccess] = useState(false);
@@ -28,7 +30,7 @@ const FoodDetail: React.FC<FoodDetailProps> = ({
       try {
         await new Promise((resolve) => setTimeout(resolve, 500));
 
-        addToCart(foodItem.id, quantity);
+        dispatch(addToCart({ item: foodItem, quantity }));
         console.log(`✅ ${foodItem.name} x${quantity} agregado al carrito`);
 
         setIsAdding(false);
@@ -36,8 +38,9 @@ const FoodDetail: React.FC<FoodDetailProps> = ({
 
         setTimeout(() => {
           setAddSuccess(false);
+          dispatch(setShowCart(true));
           onToBack();
-        }, 1500);
+        }, 3500);
       } catch (error) {
         console.error("❌ Error al agregar al carrito:", error);
         alert("Error al agregar el producto al carrito");

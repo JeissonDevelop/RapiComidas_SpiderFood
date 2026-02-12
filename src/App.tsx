@@ -1,8 +1,16 @@
 import React, { Suspense, useEffect, useState } from "react";
 import "./App.css";
-import { StoreProvider, useStore } from "./store/StoreContext";
 import ErrorBoundary from "./components/ErrorBoundary";
-import { getOrders, type FirebaseOrder } from "./services/orderService";
+import { useAppDispatch, useAppSelector } from "./store/hooks";
+import { fetchOrders } from "./store/slices/ordersSlice";
+import {
+  setIsChooseFoodPage,
+  setSelectedFood,
+  setShowCart,
+  setShowOrders,
+  setShowClassifier,
+} from "./store/slices/uiSlice";
+import Loading from "./components/Loading";
 
 const Foods = React.lazy(() => import("./components/foods/Foods"));
 const FoodOrder = React.lazy(() => import("./components/foods/FoodOrder"));
@@ -14,40 +22,45 @@ const ImageClassifier = React.lazy(
   () => import("./components/classifier/ImageClassifier"),
 );
 
-function AppContent() {
+function App() {
+  const dispatch = useAppDispatch();
   const {
     isChooseFoodPage,
-    setIsChooseFoodPage,
     selectedFood,
-    setSelectedFood,
-    menuItems,
-  } = useStore();
+    showCart,
+    showOrders,
+    showClassifier,
+  } = useAppSelector((state) => state.ui);
+  const menuItems = useAppSelector((state) => state.menu.items);
+  const allOrders = useAppSelector((state) => state.orders.orders);
+  const { currentOperation } = useAppSelector((state) => state.orders);
+  const cartItems = useAppSelector((state) => state.cart.items);
 
-  const [showOrders, setShowOrders] = React.useState(false);
-  const [showCart, setShowCart] = React.useState(false);
   const [pendingOrdersCount, setPendingOrdersCount] = useState(0);
-  const [allOrders, setAllOrders] = useState<FirebaseOrder[]>([]);
-  const [showClassifier, setShowClassifier] = useState(false);
 
   useEffect(() => {
-    const loadPendingOrders = async () => {
-      try {
-        const fetchedOrders = await getOrders();
-        setAllOrders(fetchedOrders);
-        const pendingCount = fetchedOrders.filter(
-          (o) => o.status === "pending",
-        ).length;
-        setPendingOrdersCount(pendingCount);
-      } catch (error) {
-        console.error("Error al cargar pedidos pendientes:", error);
-      }
-    };
-
-    loadPendingOrders();
-    const interval = setInterval(loadPendingOrders, 5000);
+    dispatch(fetchOrders());
+    const interval = setInterval(() => {
+      dispatch(fetchOrders());
+    }, 5000);
     return () => clearInterval(interval);
-  }, []);
+  }, [dispatch]);
 
+  useEffect(() => {
+    const pendingCount = allOrders.filter((o) => o.status === "pending").length;
+    setPendingOrdersCount(pendingCount);
+  }, [allOrders]);
+
+  /*
+    Calcula el stock disponible de forma dinámica basándose en el stock base
+    del menú y los pedidos activos en Firebase.
+
+    IMPORTANTE: El stock base en menuSlice NO se modifica manualmente.
+    Esta función calcula el stock "reservado" por pedidos pendientes/completados
+    y lo resta del stock base para obtener el stock disponible real.
+   
+    Este enfoque evita problemas de sincronización y doble conteo.
+   */
   const getAvailableStockWithOrders = (itemId: string): number => {
     const menuItem = menuItems.find((item) => String(item.id) === itemId);
     if (!menuItem) return 0;
@@ -70,24 +83,25 @@ function AppContent() {
     const availableStock = getAvailableStockWithOrders(String(item.id));
     if (availableStock > 0) {
       console.log(`🔍 Abriendo detalle de: ${item.name}`);
-      setSelectedFood(item);
-      setIsChooseFoodPage(true);
+      dispatch(setSelectedFood(item));
+      dispatch(setIsChooseFoodPage(true));
     }
   };
 
   return (
     <ErrorBoundary>
+      {currentOperation && <Loading message={currentOperation} />}
       <div className="App">
         <div className="mainContent">
           <div className="buttonGroup">
             <button
               className="toggleButton"
               onClick={() => {
-                setIsChooseFoodPage(!isChooseFoodPage);
-                setSelectedFood(null);
-                setShowOrders(false);
-                setShowCart(false);
-                setShowClassifier(false);
+                dispatch(setIsChooseFoodPage(!isChooseFoodPage));
+                dispatch(setSelectedFood(null));
+                dispatch(setShowOrders(false));
+                dispatch(setShowCart(false));
+                dispatch(setShowClassifier(false));
               }}
             >
               {isChooseFoodPage ? "Volver al menú" : "🍔 Elegir comida"}
@@ -96,24 +110,27 @@ function AppContent() {
             <button
               className="toggleButton cartButton"
               onClick={() => {
-                setShowCart(!showCart);
-                setIsChooseFoodPage(false);
-                setShowOrders(false);
-                setSelectedFood(null);
-                setShowClassifier(false);
+                dispatch(setShowCart(!showCart));
+                dispatch(setIsChooseFoodPage(false));
+                dispatch(setIsChooseFoodPage(false));
+                dispatch(setShowOrders(false));
+                dispatch(setSelectedFood(null));
+                dispatch(setShowClassifier(false));
               }}
             >
-              {showCart ? "Volver" : "🛒 Ver Carrito"}
+              {showCart
+                ? "Volver"
+                : `🛒 Ver Carrito ${cartItems.length > 0 ? `(${cartItems.length})` : ""}`}
             </button>
 
             <button
               className="toggleButton ordersButton"
               onClick={() => {
-                setShowOrders(!showOrders);
-                setIsChooseFoodPage(false);
-                setShowCart(false);
-                setSelectedFood(null);
-                setShowClassifier(false);
+                dispatch(setShowOrders(!showOrders));
+                dispatch(setIsChooseFoodPage(false));
+                dispatch(setShowCart(false));
+                dispatch(setSelectedFood(null));
+                dispatch(setShowClassifier(false));
               }}
             >
               {showOrders
@@ -124,11 +141,11 @@ function AppContent() {
             <button
               className="toggleButton classifierButton"
               onClick={() => {
-                setShowClassifier(!showClassifier);
-                setIsChooseFoodPage(false);
-                setShowOrders(false);
-                setShowCart(false);
-                setSelectedFood(null);
+                dispatch(setShowClassifier(!showClassifier));
+                dispatch(setIsChooseFoodPage(false));
+                dispatch(setShowOrders(false));
+                dispatch(setShowCart(false));
+                dispatch(setSelectedFood(null));
               }}
             >
               {showClassifier ? "Volver" : "🖼️ Clasificador IA"}
@@ -150,7 +167,7 @@ function AppContent() {
             </Suspense>
           ) : showCart ? (
             <Suspense fallback={<div>Cargando carrito...</div>}>
-              <Cart onReturnToMenu={() => setShowCart(false)} />
+              <Cart onReturnToMenu={() => dispatch(setShowCart(false))} />
             </Suspense>
           ) : (
             <>
@@ -203,7 +220,7 @@ function AppContent() {
                       String(selectedFood.id),
                     )}
                     totalStock={selectedFood.quantity}
-                    onToBack={() => setSelectedFood(null)}
+                    onToBack={() => dispatch(setSelectedFood(null))}
                   />
                 </Suspense>
               )}
@@ -212,14 +229,6 @@ function AppContent() {
         </div>
       </div>
     </ErrorBoundary>
-  );
-}
-
-function App() {
-  return (
-    <StoreProvider>
-      <AppContent />
-    </StoreProvider>
   );
 }
 

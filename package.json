@@ -13,6 +13,7 @@
     "test:ui": "vitest --ui --config vitest.config.ts"
   },
   "dependencies": {
+    "@reduxjs/toolkit": "^2.11.2",
     "@tensorflow-models/mobilenet": "^2.1.1",
     "@tensorflow/tfjs": "^4.22.0",
     "@tensorflow/tfjs-backend-webgl": "^4.22.0",
@@ -23,7 +24,9 @@
     "express": "^5.2.1",
     "firebase": "^12.8.0",
     "react": "^19.2.0",
-    "react-dom": "^19.2.0"
+    "react-dom": "^19.2.0",
+    "react-redux": "^9.2.0",
+    "redux": "^5.0.1"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
